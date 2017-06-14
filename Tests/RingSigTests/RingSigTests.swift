@@ -1,15 +1,12 @@
 import XCTest
+import BigInt
 @testable import RingSig
 
 class RingSigTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        XCTAssertEqual(RingSig().text, "Hello, World!")
+    func testRSA() {
+      let keyPair = RSA.generateKeyPair(length: 64)
+      let message = BigUInt("Hello, World!".data(using: .utf8)!)
+      let signature = RSA.sign(message: message, privateKey: keyPair.privateKey, publicKey: keyPair.publicKey)
+      XCTAssert(RSA.verify(message: message, signature: signature, publicKey: keyPair.publicKey))
     }
-
-
-    static var allTests = [
-        ("testExample", testExample),
-    ]
 }
