@@ -40,9 +40,17 @@ class RSA {
     let publicKey: PublicKey
   }
   
-  struct PublicKey {
+  struct PublicKey: Hashable {
     let n: BigUInt
     static let e = BigUInt(65537)
+    
+    var hashValue: Int {
+      return n.hashValue
+    }
+    
+    static func ==(lhs: RSA.PublicKey, rhs: RSA.PublicKey) -> Bool {
+      return lhs.n == rhs.n
+    }
   }
   
   typealias PrivateKey = BigUInt
