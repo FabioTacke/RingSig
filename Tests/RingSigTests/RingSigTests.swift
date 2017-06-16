@@ -12,10 +12,10 @@ class RingSigTests: XCTestCase {
   
   func testModulusCalculation() {
     var publicKeys = [RSA.PublicKey(n: BigUInt(234)), RSA.PublicKey(n: BigUInt(567)), RSA.PublicKey(n: BigUInt(123))]
-    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys), BigUInt(256))
+    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys).width, 256)
     
     publicKeys.append(RSA.PublicKey(n: BigUInt(2).power(96) - 1))
-    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys), BigUInt(256))
+    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys).width, 256)
   }
   
   func testHashing() {
@@ -26,8 +26,22 @@ class RingSigTests: XCTestCase {
   
   func testG() {
     let publicKey = RSA.PublicKey(n: 35)
-    let y = RingSig.g(x: 75, publicKey: publicKey, modulus: 128)
+    let commonMod = RingSig.commonB(publicKeys: [publicKey])
+    let y = RingSig.g(x: 75, publicKey: publicKey, commonModulus: commonMod)
     XCTAssertEqual(y, 80)
+  }
+  
+  func testInverseG() {
+    let privateKey = BigUInt("20870137355527743369994722947712256421")!
+    let publicKey = RSA.PublicKey(n: BigUInt("74129651068734579023650285894982581637")!)
+    let keyPair = RSA.KeyPair(privateKey: privateKey, publicKey: publicKey)
+    let commonMod = RingSig.commonB(publicKeys: [publicKey])
+    
+    // Choose for x a random value with b bits where b = commonMod.width
+    let x = BigUInt("21983811768245934506376641934698562702052075606785051086704688378747977445689082037367759437015074342714318969447746")!
+    let y = RingSig.g(x: x, publicKey: publicKey, commonModulus: commonMod)
+    let yInverse = RingSig.gInverse(y: y, keyPair: keyPair)
+    XCTAssertEqual(x, yInverse)
   }
   
   func testEncryption() {
@@ -39,5 +53,9 @@ class RingSigTests: XCTestCase {
     let cipher = RingSig.encrypt(message: message, key: key)
     let plaintext = RingSig.decrypt(cipher: cipher, key: key)
     XCTAssertEqual(plaintext, message)
+  }
+  
+  func testArrayShuffle() {
+    // TODO: Testing
   }
 }

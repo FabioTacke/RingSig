@@ -13,24 +13,22 @@ import CryptoSwift
 class RingSig {
   static func ringSign(message: BigUInt, nonSignersPublicKeys: [RSA.PublicKey], signerKeyPair: RSA.KeyPair) -> Signature {
     // 0. Choose a moduli for all the calculations that is sufficiently great
-    let b = commonB(publicKeys: nonSignersPublicKeys + [signerKeyPair.publicKey])
-    print("b=\(b.description)")
+    let commonModulus = commonB(publicKeys: nonSignersPublicKeys + [signerKeyPair.publicKey])
     
     // 1. Compute the key as k = h(m)
     let k = calculateDigest(message: message)
-    print("Length of k: \(k.width)")
     
     // 2. Pick a random glue value
-    let glue = BigUInt.randomInteger(withExactWidth: b.width)
+    let glue = BigUInt.randomInteger(withExactWidth: commonModulus.width)
     
     // 3. Pick random values x_i for the non-signers and compute y_i
     var xValues: [RSA.PublicKey: BigUInt] = [:]
     for publicKey in nonSignersPublicKeys {
-      xValues[publicKey] = BigUInt.randomInteger(withExactWidth: b.width)
+      xValues[publicKey] = BigUInt.randomInteger(withExactWidth: commonModulus.width)
     }
     
     let yValues: [BigUInt] = xValues.map { (publicKey, xValue) in
-      return g(x: xValue, publicKey: publicKey, modulus: b)
+      return g(x: xValue, publicKey: publicKey, commonModulus: commonModulus)
     }
     
     // 4. Solve the ring equation for y_s of the signer
@@ -65,11 +63,11 @@ class RingSig {
     let nMax = publicKeys.reduce(1) { (result, publicKey) in
       return publicKey.n > result ? publicKey.n : result
     }
-    var sufficientBits = BigUInt(nMax.width + 160)
+    var sufficientBits = nMax.width + 160
     if sufficientBits % 128 > 0 {
       sufficientBits += 128 - (sufficientBits % 128)
     }
-    return sufficientBits
+    return BigUInt.randomInteger(withExactWidth: sufficientBits)
   }
   
   /// Computes the extended trap-door permutation `g_i` as described in the paper.
@@ -79,10 +77,10 @@ class RingSig {
   ///   - publicKey: The public key holds the modulus needed for the calculation
   ///   - modulus: The modulus `b` is the common modulus used for all the calculations
   /// - Returns: `g(x) = qn+f(r)` where `x = qn+r` and `f(r)` is the RSA encryption operation `r^e`
-  internal static func g(x: BigUInt, publicKey: RSA.PublicKey, modulus: BigUInt) -> BigUInt {
+  internal static func g(x: BigUInt, publicKey: RSA.PublicKey, commonModulus: BigUInt) -> BigUInt {
     let q = x / publicKey.n
     var result = x
-    if (q + 1) * publicKey.n <= BigUInt(2).power(modulus.width) {
+    if (q + 1) * publicKey.n <= commonModulus {
       let r = x - (q * publicKey.n)
       let fr = r.power(RSA.PublicKey.e, modulus: publicKey.n)
       result = (q * publicKey.n) + fr
