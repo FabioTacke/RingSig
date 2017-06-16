@@ -54,4 +54,20 @@ class RingSigTests: XCTestCase {
     let plaintext = RingSig.decrypt(cipher: cipher, key: key)
     XCTAssertEqual(plaintext, message)
   }
+  
+  func testArrayShuffle() {
+    let array = [RSA.PublicKey(n: 1), RSA.PublicKey(n: 2), RSA.PublicKey(n: 3)]
+    var shuffledArray = array
+    var identical = true
+    
+    for _ in 0..<2 {
+      shuffledArray.shuffle()
+      for index in 0..<array.count {
+        if shuffledArray[index] != array[index] {
+          identical = false
+        }
+      }
+    }
+    XCTAssert(!identical)
+  }
 }
