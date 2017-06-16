@@ -54,8 +54,4 @@ class RingSigTests: XCTestCase {
     let plaintext = RingSig.decrypt(cipher: cipher, key: key)
     XCTAssertEqual(plaintext, message)
   }
-  
-  func testArrayShuffle() {
-    // TODO: Testing
-  }
 }
