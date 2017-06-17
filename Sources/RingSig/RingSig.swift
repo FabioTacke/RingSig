@@ -83,7 +83,7 @@ class RingSig {
     if sufficientBits % 128 > 0 {
       sufficientBits += 128 - (sufficientBits % 128)
     }
-    return BigUInt.randomInteger(withExactWidth: sufficientBits)
+    return (BigUInt(1) << sufficientBits) - 1
   }
   
   /// Computes the extended trap-door permutation `g_i` as described in the paper.
