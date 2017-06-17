@@ -20,6 +20,17 @@ extension BigUInt {
     
     return random
   }
+  
+  public func bytesWithPadding(to bytesCount: Int) -> Array<UInt8> {
+    let bytes = self.serialize().bytes
+    let paddingBytes = bytesCount - bytes.count
+    var padding = Array<UInt8>()
+    for _ in 0..<paddingBytes {
+      padding += [0]
+    }
+    return padding + bytes
+  }
+
 }
 
 extension Array

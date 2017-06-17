@@ -50,8 +50,8 @@ class RingSigTests: XCTestCase {
     let message = BigUInt(2).power(128) - 1
     XCTAssertEqual(message.width, 128)
     
-    let cipher = RingSig.encrypt(message: message, key: key)
-    let plaintext = RingSig.decrypt(cipher: cipher, key: key)
+    let cipher = RingSig.encrypt(message: message.bytesWithPadding(to: 64), key: key)
+    let plaintext = RingSig.decrypt(cipher: cipher.bytesWithPadding(to: 64), key: key)
     XCTAssertEqual(plaintext, message)
   }
   

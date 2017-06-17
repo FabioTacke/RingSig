@@ -32,7 +32,7 @@ class RingSig {
     }
     
     // 4. Solve the ring equation for y_s of the signer
-    let yS = solve(arguments: yValues, key: k, glue: glue)
+    let yS = solve(arguments: yValues, key: k, glue: glue, commonModulus: commonModulus)
     
     // 5. Invert the signer's trap-door permutation
     let xS = gInverse(y: yS, keyPair: signerKeyPair)
@@ -131,10 +131,10 @@ class RingSig {
   ///   - message: The message to be encrypted.
   ///   - key: The (symmetric) key.
   /// - Returns: Ciphertext of AES-256 CBC encrypted message.
-  internal static func encrypt(message: BigUInt, key: BigUInt) -> BigUInt {
-    precondition(message.width % 128 == 0)
+  internal static func encrypt(message: Array<UInt8>, key: BigUInt) -> BigUInt {
+    precondition(message.count % 16 == 0)
     let aes = try! AES(key: key.serialize().bytes, iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes, blockMode: .CBC, padding: NoPadding())
-    let ciphertext = try! aes.encrypt(message.serialize().bytes)
+    let ciphertext = try! aes.encrypt(message)
     return BigUInt(Data(bytes: ciphertext))
   }
   
@@ -144,9 +144,9 @@ class RingSig {
   ///   - cipher: The ciphertext to be decrypted.
   ///   - key: The (symmetric) key.
   /// - Returns: Plaintext of AES-256 CBC decrypted ciphertext.
-  internal static func decrypt(cipher: BigUInt, key: BigUInt) -> BigUInt {
+  internal static func decrypt(cipher: Array<UInt8>, key: BigUInt) -> BigUInt {
     let aes = try! AES(key: key.serialize().bytes, iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes, blockMode: .CBC, padding: NoPadding())
-    let plaintext = try! aes.decrypt(cipher.serialize().bytes)
+    let plaintext = try! aes.decrypt(cipher)
     return BigUInt(Data(bytes: plaintext))
   }
   
@@ -157,11 +157,11 @@ class RingSig {
   ///   - key: The (symmetric) key to be used for the encryption algorithm
   ///   - glue: The chosen glue value
   /// - Returns: Result of the function
-  internal static func C(arguments: [BigUInt], key: BigUInt, glue: BigUInt) -> BigUInt {
+  internal static func C(arguments: [BigUInt], key: BigUInt, glue: BigUInt, commonModulus: BigUInt) -> BigUInt {
     var result = glue
     for argument in arguments {
       let plaintext = argument ^ result
-      result = encrypt(message: plaintext, key: key)
+      result = encrypt(message: plaintext.bytesWithPadding(to: commonModulus.width / 8), key: key)
     }
     return result
   }
@@ -173,9 +173,10 @@ class RingSig {
   ///   - key: The (symmetric) key used for the encryption algorithm
   ///   - glue: The glue value
   /// - Returns: The computed value for y_r
-  internal static func solve(arguments: [BigUInt], key: BigUInt, glue: BigUInt) -> BigUInt {
-    let lhs = decrypt(cipher: glue, key: key)
-    let rhs = C(arguments: arguments, key: key, glue: glue)
+  internal static func solve(arguments: [BigUInt], key: BigUInt, glue: BigUInt, commonModulus: BigUInt) -> BigUInt {
+    let vPadded = glue.bytesWithPadding(to: commonModulus.width / 8)
+    let lhs = decrypt(cipher: vPadded, key: key)
+    let rhs = C(arguments: arguments, key: key, glue: glue, commonModulus: commonModulus)
     return lhs ^ rhs
   }
   
