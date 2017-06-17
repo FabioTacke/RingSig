@@ -45,6 +45,22 @@ class RingSig {
     return Signature(publicKeys: shuffledPublicKeys, glue: glue, xValues: shuffledPublicKeys.map { xValues[$0]! })
   }
   
+  static func ringSigVerify(message: BigUInt, signature: Signature) -> Bool {
+    precondition(signature.publicKeys.count == signature.xValues.count)
+    // 1. Apply the trap-door permutations
+    let commonModulus = commonB(publicKeys: signature.publicKeys)
+    var yValues: [BigUInt] = []
+    for index in 0..<signature.publicKeys.count {
+      let yValue = g(x: signature.xValues[index], publicKey: signature.publicKeys[index], commonModulus: commonModulus)
+      yValues.append(yValue)
+    }
+    // 2. Compute the key as k = h(m)
+    let k = calculateDigest(message: message)
+    
+    // 3. Check combination equation
+    return C(arguments: yValues, key: k, glue: signature.glue, commonModulus: commonModulus) == signature.glue
+  }
+  
   /// Calculates the SHA256 hash digest of the given input.
   ///
   /// - Parameter message: The message whose hash digest is going to be computed
