@@ -10,7 +10,7 @@ import Foundation
 import BigInt
 import CryptoSwift
 
-class RingSig {
+public class RingSig {
   /// Signs the given message using the ring signature scheme
   ///
   /// - Parameters:
