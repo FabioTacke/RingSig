@@ -63,21 +63,4 @@ class RingSigTests: XCTestCase {
     let signature = RingSig.ringSign(message: message, nonSignersPublicKeys: nonSignersPublicKeys, signerKeyPair: signerKeyPair)
     XCTAssert(RingSig.ringSigVerify(message: message, signature: signature))
   }
-  
-
-  func testArrayShuffle() {
-    let array = [RSA.PublicKey(n: 1), RSA.PublicKey(n: 2), RSA.PublicKey(n: 3)]
-    var shuffledArray = array
-    var identical = true
-    
-    for _ in 0..<2 {
-      shuffledArray.shuffle()
-      for index in 0..<array.count {
-        if shuffledArray[index] != array[index] {
-          identical = false
-        }
-      }
-    }
-    XCTAssert(!identical)
-  }
 }
