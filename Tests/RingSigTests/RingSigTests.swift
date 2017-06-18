@@ -55,6 +55,17 @@ class RingSigTests: XCTestCase {
     XCTAssertEqual(plaintext, message)
   }
   
+  func testExample() {
+    let length = 64
+    let signerKeyPair = RSA.generateKeyPair(length: length)
+    let nonSignersPublicKeys = [RSA.PublicKey(n: BigUInt.randomInteger(withMaximumWidth: 70)), RSA.PublicKey(n: BigUInt.randomInteger(withMaximumWidth: 70))]
+    let message = BigUInt.randomInteger(withMaximumWidth: 128)
+    
+    let signature = RingSig.ringSign(message: message, nonSignersPublicKeys: nonSignersPublicKeys, signerKeyPair: signerKeyPair)
+    XCTAssert(RingSig.ringSigVerify(message: message, signature: signature))
+  }
+  
+
   func testArrayShuffle() {
     let array = [RSA.PublicKey(n: 1), RSA.PublicKey(n: 2), RSA.PublicKey(n: 3)]
     var shuffledArray = array

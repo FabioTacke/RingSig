@@ -12,37 +12,33 @@ import CryptoSwift
 
 class RingSig {
   static func ringSign(message: BigUInt, nonSignersPublicKeys: [RSA.PublicKey], signerKeyPair: RSA.KeyPair) -> Signature {
+    // Sort public keys so that the verifier cannot obtain the signer's identity from the order of the keys
+    let publicKeys = (nonSignersPublicKeys + [signerKeyPair.publicKey]).sorted { $0.n < $1.n }
+    let signerIndex = publicKeys.index(of: signerKeyPair.publicKey)!
+    
     // 0. Choose a moduli for all the calculations that is sufficiently great
-    let commonModulus = commonB(publicKeys: nonSignersPublicKeys + [signerKeyPair.publicKey])
+    let commonModulus = commonB(publicKeys: publicKeys)
     
     // 1. Compute the key as k = h(m)
     let k = calculateDigest(message: message)
     
     // 2. Pick a random glue value
-    let glue = BigUInt.randomInteger(withExactWidth: commonModulus.width)
+    let glue = BigUInt.randomInteger(withMaximumWidth: commonModulus.width)
+
     
     // 3. Pick random values x_i for the non-signers and compute y_i
-    var xValues: [RSA.PublicKey: BigUInt] = [:]
-    for publicKey in nonSignersPublicKeys {
-      xValues[publicKey] = BigUInt.randomInteger(withExactWidth: commonModulus.width)
-    }
+    var xValues: [BigUInt] = publicKeys.map { _ in BigUInt.randomInteger(withMaximumWidth: commonModulus.width) }
     
-    let yValues: [BigUInt] = xValues.map { (publicKey, xValue) in
-      return g(x: xValue, publicKey: publicKey, commonModulus: commonModulus)
+    let yValues: [BigUInt?] = publicKeys.map { publicKey in publicKey != signerKeyPair.publicKey ? g(x: xValues[publicKeys.index(of: publicKey)!], publicKey: publicKey, commonModulus: commonModulus) : nil
     }
     
     // 4. Solve the ring equation for y_s of the signer
     let yS = solve(arguments: yValues, key: k, glue: glue, commonModulus: commonModulus)
     
     // 5. Invert the signer's trap-door permutation
-    let xS = gInverse(y: yS, keyPair: signerKeyPair)
+    xValues[signerIndex] = gInverse(y: yS, keyPair: signerKeyPair)
     
-    // 6. Shuffle public keys
-    xValues[signerKeyPair.publicKey] = xS
-    var shuffledPublicKeys = nonSignersPublicKeys + [signerKeyPair.publicKey]
-    shuffledPublicKeys.shuffle()
-    
-    return Signature(publicKeys: shuffledPublicKeys, glue: glue, xValues: shuffledPublicKeys.map { xValues[$0]! })
+    return Signature(publicKeys: publicKeys, glue: glue, xValues: xValues)
   }
   
   static func ringSigVerify(message: BigUInt, signature: Signature) -> Bool {
@@ -51,8 +47,7 @@ class RingSig {
     let commonModulus = commonB(publicKeys: signature.publicKeys)
     var yValues: [BigUInt] = []
     for index in 0..<signature.publicKeys.count {
-      let yValue = g(x: signature.xValues[index], publicKey: signature.publicKeys[index], commonModulus: commonModulus)
-      yValues.append(yValue)
+      yValues.append(g(x: signature.xValues[index], publicKey: signature.publicKeys[index], commonModulus: commonModulus))
     }
     // 2. Compute the key as k = h(m)
     let k = calculateDigest(message: message)
@@ -173,11 +168,21 @@ class RingSig {
   ///   - key: The (symmetric) key used for the encryption algorithm
   ///   - glue: The glue value
   /// - Returns: The computed value for y_r
-  internal static func solve(arguments: [BigUInt], key: BigUInt, glue: BigUInt, commonModulus: BigUInt) -> BigUInt {
-    let vPadded = glue.bytesWithPadding(to: commonModulus.width / 8)
-    let lhs = decrypt(cipher: vPadded, key: key)
-    let rhs = C(arguments: arguments, key: key, glue: glue, commonModulus: commonModulus)
-    return lhs ^ rhs
+  internal static func solve(arguments: [BigUInt?], key: BigUInt, glue: BigUInt, commonModulus: BigUInt) -> BigUInt {
+    var remainingArguments = arguments
+    var temp = glue
+    while remainingArguments.last != nil {
+      temp = decrypt(cipher: temp.bytesWithPadding(to: commonModulus.width / 8), key: key)
+      if let nextArgument = remainingArguments.removeLast() {
+        // y_i of a non-signer
+        temp ^= nextArgument
+      } else {
+        // We reached the slot of the signer's y_i for which we want to solve the ring equation
+        temp ^= C(arguments: remainingArguments as! [BigUInt], key: key, glue: glue, commonModulus: commonModulus)
+        break
+      }
+    }
+    return temp
   }
   
   struct Signature {
