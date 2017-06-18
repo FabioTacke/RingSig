@@ -11,6 +11,13 @@ import BigInt
 import CryptoSwift
 
 class RingSig {
+  /// Signs the given message using the ring signature scheme
+  ///
+  /// - Parameters:
+  ///   - message: The message to be signed
+  ///   - nonSignersPublicKeys: Array of `RSA.PublicKey` objects of those who do not actually sign the message
+  ///   - signerKeyPair: The `RSA.KeyPair` of the signer who actually signs the message
+  /// - Returns: Signature of the message
   static func ringSign(message: BigUInt, nonSignersPublicKeys: [RSA.PublicKey], signerKeyPair: RSA.KeyPair) -> Signature {
     // Sort public keys so that the verifier cannot obtain the signer's identity from the order of the keys
     let publicKeys = (nonSignersPublicKeys + [signerKeyPair.publicKey]).sorted { $0.n < $1.n }
@@ -41,6 +48,12 @@ class RingSig {
     return Signature(publicKeys: publicKeys, glue: glue, xValues: xValues)
   }
   
+  /// Verifies a given ring signature
+  ///
+  /// - Parameters:
+  ///   - message: The message that is signed
+  ///   - signature: The corresponding signature
+  /// - Returns: `true` if the signature matches the message, `false` otherwise
   static func ringSigVerify(message: BigUInt, signature: Signature) -> Bool {
     precondition(signature.publicKeys.count == signature.xValues.count)
     // 1. Apply the trap-door permutations
@@ -69,7 +82,7 @@ class RingSig {
   /// Furthermore we might add a few bits more in order to reach a multiple of the block size of the encryption algorithm (in this case 128 bit for AES).
   ///
   /// - Parameter publicKeys: The public keys that specify the individual moduli
-  /// - Returns: A modulus that is greater than the greatest `n_i` and a multiple of the AES block size
+  /// - Returns: `(2^b) - 1` where `b` is greater than the width of the greatest `n_i` and a multiple of the AES block size
   internal static func commonB(publicKeys: [RSA.PublicKey]) -> BigUInt {
     let nMax = publicKeys.reduce(1) { (result, publicKey) in
       return publicKey.n > result ? publicKey.n : result
@@ -86,8 +99,8 @@ class RingSig {
   /// - Parameters:
   ///   - x: Input argument
   ///   - publicKey: The public key holds the modulus needed for the calculation
-  ///   - modulus: The modulus `b` is the common modulus used for all the calculations
-  /// - Returns: `g(x) = qn+f(r)` where `x = qn+r` and `f(r)` is the RSA encryption operation `r^e`
+  ///   - modulus: The common modulus used for all the calculations
+  /// - Returns: `g(x) = qn+f(r)` where `x = qn+r` and `f(r)` is the RSA encryption operation `r^e mod n`
   internal static func g(x: BigUInt, publicKey: RSA.PublicKey, commonModulus: BigUInt) -> BigUInt {
     let q = x / publicKey.n
     var result = x
@@ -121,7 +134,7 @@ class RingSig {
   
   /// Encrypts the given message under the specified key using AES-256 CBC.
   ///
-  /// - Requires: Message length must be a multiple of the block size of 128 bit.
+  /// - Requires: Message length must be a multiple of the block size of 32 bytes.
   /// - Parameters:
   ///   - message: The message to be encrypted.
   ///   - key: The (symmetric) key.
@@ -151,6 +164,7 @@ class RingSig {
   ///   - arguments: The arguments passed into the function
   ///   - key: The (symmetric) key to be used for the encryption algorithm
   ///   - glue: The chosen glue value
+  ///   - commonModulus: The common modulus used for all the calculations
   /// - Returns: Result of the function
   internal static func C(arguments: [BigUInt], key: BigUInt, glue: BigUInt, commonModulus: BigUInt) -> BigUInt {
     var result = glue
@@ -161,13 +175,15 @@ class RingSig {
     return result
   }
   
-  /// Solve the ring equation C_k,v(y_1, ..., y_r) = v for y_r
+  /// Solve the ring equation C_k,v(y_1, ..., y_r) = v for a given y_i
   ///
+  /// - Requires: Exactly one of the y_i (the y_i to solve the equation for) must be nil
   /// - Parameters:
   ///   - arguments: The y_i values
   ///   - key: The (symmetric) key used for the encryption algorithm
   ///   - glue: The glue value
-  /// - Returns: The computed value for y_r
+  ///   - commonModulus: The common modulus used for all the calculations
+  /// - Returns: The computed value for y_i
   internal static func solve(arguments: [BigUInt?], key: BigUInt, glue: BigUInt, commonModulus: BigUInt) -> BigUInt {
     var remainingArguments = arguments
     var temp = glue
