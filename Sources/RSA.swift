@@ -10,7 +10,7 @@ import Foundation
 import BigInt
 
 public class RSA {
-  static func generateKeyPair(length: Int = 128) -> KeyPair {
+  public static func generateKeyPair(length: Int = 128) -> KeyPair {
     // Choose two distinct prime numbers
     let p = BigUInt.randomPrime(length: length)
     var q = BigUInt.randomPrime(length: length)
@@ -27,32 +27,32 @@ public class RSA {
     return KeyPair(privateKey: d, publicKey: PublicKey(n: n))
   }
   
-  static func sign(message: BigUInt, privateKey: PrivateKey, publicKey: PublicKey) -> Signature {
+  public static func sign(message: BigUInt, privateKey: PrivateKey, publicKey: PublicKey) -> Signature {
     return message.power(privateKey, modulus: publicKey.n)
   }
   
-  static func verify(message: BigUInt, signature: Signature, publicKey: PublicKey) -> Bool {
+  public static func verify(message: BigUInt, signature: Signature, publicKey: PublicKey) -> Bool {
     return signature.power(PublicKey.e, modulus: publicKey.n) == message
   }
   
-  struct KeyPair {
-    let privateKey: PrivateKey
-    let publicKey: PublicKey
+  public struct KeyPair {
+    public let privateKey: PrivateKey
+    public let publicKey: PublicKey
   }
   
-  struct PublicKey: Hashable {
-    let n: BigUInt
-    static let e = BigUInt(65537)
+  public struct PublicKey: Hashable {
+    public let n: BigUInt
+    public static let e = BigUInt(65537)
     
-    var hashValue: Int {
+    public var hashValue: Int {
       return n.hashValue
     }
     
-    static func ==(lhs: RSA.PublicKey, rhs: RSA.PublicKey) -> Bool {
+    public static func ==(lhs: RSA.PublicKey, rhs: RSA.PublicKey) -> Bool {
       return lhs.n == rhs.n
     }
   }
   
-  typealias PrivateKey = BigUInt
-  typealias Signature = BigUInt
+  public typealias PrivateKey = BigUInt
+  public typealias Signature = BigUInt
 }

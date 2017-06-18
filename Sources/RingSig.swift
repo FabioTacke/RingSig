@@ -18,7 +18,7 @@ public class RingSig {
   ///   - nonSignersPublicKeys: Array of `RSA.PublicKey` objects of those who do not actually sign the message
   ///   - signerKeyPair: The `RSA.KeyPair` of the signer who actually signs the message
   /// - Returns: Signature of the message
-  static func ringSign(message: Data, nonSignersPublicKeys: [RSA.PublicKey], signerKeyPair: RSA.KeyPair) -> Signature {
+  public static func ringSign(message: Data, nonSignersPublicKeys: [RSA.PublicKey], signerKeyPair: RSA.KeyPair) -> Signature {
     return ringSign(message: BigUInt(message), nonSignersPublicKeys: nonSignersPublicKeys, signerKeyPair: signerKeyPair)
   }
   
@@ -30,7 +30,7 @@ public class RingSig {
   ///   - nonSignersPublicKeys: Array of `RSA.PublicKey` objects of those who do not actually sign the message
   ///   - signerKeyPair: The `RSA.KeyPair` of the signer who actually signs the message
   /// - Returns: Signature of the message
-  static func ringSign(message: BigUInt, nonSignersPublicKeys: [RSA.PublicKey], signerKeyPair: RSA.KeyPair) -> Signature {
+  public static func ringSign(message: BigUInt, nonSignersPublicKeys: [RSA.PublicKey], signerKeyPair: RSA.KeyPair) -> Signature {
     // Sort public keys so that the verifier cannot obtain the signer's identity from the order of the keys
     let publicKeys = (nonSignersPublicKeys + [signerKeyPair.publicKey]).sorted { $0.n < $1.n }
     let signerIndex = publicKeys.index(of: signerKeyPair.publicKey)!
@@ -66,7 +66,7 @@ public class RingSig {
   ///   - message: The message that is signed
   ///   - signature: The corresponding signature
   /// - Returns: `true` if the signature matches the message, `false` otherwise
-  static func ringSigVerify(message: Data, signature: Signature) -> Bool {
+  public static func ringSigVerify(message: Data, signature: Signature) -> Bool {
     return ringSigVerify(message: BigUInt(message), signature: signature)
   }
   
@@ -76,7 +76,7 @@ public class RingSig {
   ///   - message: The message that is signed
   ///   - signature: The corresponding signature
   /// - Returns: `true` if the signature matches the message, `false` otherwise
-  static func ringSigVerify(message: BigUInt, signature: Signature) -> Bool {
+  public static func ringSigVerify(message: BigUInt, signature: Signature) -> Bool {
     precondition(signature.publicKeys.count == signature.xValues.count)
     // 1. Apply the trap-door permutations
     let commonModulus = commonB(publicKeys: signature.publicKeys)
@@ -223,9 +223,9 @@ public class RingSig {
     return temp
   }
   
-  struct Signature {
-    let publicKeys: [RSA.PublicKey]
-    let glue: BigUInt
-    let xValues: [BigUInt]
+  public struct Signature {
+    public let publicKeys: [RSA.PublicKey]
+    public let glue: BigUInt
+    public let xValues: [BigUInt]
   }
 }

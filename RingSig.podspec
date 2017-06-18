@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'RingSig'
-  s.version          = '1.0.0'
+  s.version          = '1.0.1'
   s.summary          = 'An implementation of a ring signature scheme in Swift.'
   s.description      = <<-DESC
 The library implements a ring signature scheme in Swift. The algorithm is based on "How to leak a secret" (2001) by Rivest et al.
