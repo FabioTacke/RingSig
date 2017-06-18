@@ -58,9 +58,9 @@ class RingSigTests: XCTestCase {
   func testExample() {
     let signerKeyPair = RSA.KeyPair(privateKey: BigUInt("30423901813523083734702429796436866913")!, publicKey: RSA.PublicKey(n: BigUInt("43400183996187852930492884648088438479")!))
     let nonSignersPublicKeys = [RSA.PublicKey(n: BigUInt("11243439923812814746157156802640116157")!), RSA.PublicKey(n: BigUInt("100957337523025685661252860292428312189")!)]
-    let message = BigUInt.randomInteger(withMaximumWidth: 128)
+    let message = "Hello, World!"
     
-    let signature = RingSig.ringSign(message: message, nonSignersPublicKeys: nonSignersPublicKeys, signerKeyPair: signerKeyPair)
-    XCTAssert(RingSig.ringSigVerify(message: message, signature: signature))
+    let signature = RingSig.ringSign(message: message.data(using: .utf8)!, nonSignersPublicKeys: nonSignersPublicKeys, signerKeyPair: signerKeyPair)
+    XCTAssert(RingSig.ringSigVerify(message: message.data(using: .utf8)!, signature: signature))
   }
 }

@@ -10,7 +10,7 @@ import Foundation
 import BigInt
 
 class RSA {
-  static func generateKeyPair(length: Int) -> KeyPair {
+  static func generateKeyPair(length: Int = 128) -> KeyPair {
     // Choose two distinct prime numbers
     let p = BigUInt.randomPrime(length: length)
     var q = BigUInt.randomPrime(length: length)
