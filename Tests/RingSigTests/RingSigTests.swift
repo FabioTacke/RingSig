@@ -12,10 +12,10 @@ class RingSigTests: XCTestCase {
   
   func testModulusCalculation() {
     var publicKeys = [RSA.PublicKey(n: BigUInt(234)), RSA.PublicKey(n: BigUInt(567)), RSA.PublicKey(n: BigUInt(123))]
-    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys).width, 256)
+    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys).bitWidth, 256)
     
     publicKeys.append(RSA.PublicKey(n: BigUInt(2).power(96) - 1))
-    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys).width, 256)
+    XCTAssertEqual(RingSig.commonB(publicKeys: publicKeys).bitWidth, 256)
   }
   
   func testHashing() {
@@ -46,9 +46,9 @@ class RingSigTests: XCTestCase {
   
   func testEncryption() {
     let key = BigUInt(2).power(256) - 1
-    XCTAssertEqual(key.width, 256)
+    XCTAssertEqual(key.bitWidth, 256)
     let message = BigUInt(2).power(128) - 1
-    XCTAssertEqual(message.width, 128)
+    XCTAssertEqual(message.bitWidth, 128)
     
     let cipher = RingSig.encrypt(message: message.bytesWithPadding(to: 64), key: key)
     let plaintext = RingSig.decrypt(cipher: cipher.bytesWithPadding(to: 64), key: key)

@@ -42,11 +42,11 @@ public class RingSig {
     let k = calculateDigest(message: message)
     
     // 2. Pick a random glue value
-    let glue = BigUInt.randomInteger(withMaximumWidth: commonModulus.width)
+    let glue = BigUInt.randomInteger(withMaximumWidth: commonModulus.bitWidth)
 
     
     // 3. Pick random values x_i for the non-signers and compute y_i
-    var xValues: [BigUInt] = publicKeys.map { _ in BigUInt.randomInteger(withMaximumWidth: commonModulus.width) }
+    var xValues: [BigUInt] = publicKeys.map { _ in BigUInt.randomInteger(withMaximumWidth: commonModulus.bitWidth) }
     
     let yValues: [BigUInt?] = publicKeys.map { publicKey in publicKey != signerKeyPair.publicKey ? g(x: xValues[publicKeys.index(of: publicKey)!], publicKey: publicKey, commonModulus: commonModulus) : nil
     }
@@ -109,7 +109,7 @@ public class RingSig {
     let nMax = publicKeys.reduce(1) { (result, publicKey) in
       return publicKey.n > result ? publicKey.n : result
     }
-    var sufficientBits = nMax.width + 160
+    var sufficientBits = nMax.bitWidth + 160
     if sufficientBits % 128 > 0 {
       sufficientBits += 128 - (sufficientBits % 128)
     }
@@ -163,7 +163,7 @@ public class RingSig {
   /// - Returns: Ciphertext of AES-256 CBC encrypted message.
   internal static func encrypt(message: Array<UInt8>, key: BigUInt) -> BigUInt {
     precondition(message.count % 16 == 0)
-    let aes = try! AES(key: key.serialize().bytes, iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes, blockMode: .CBC, padding: NoPadding())
+    let aes = try! AES(key: key.serialize().bytes, blockMode: BlockMode.CBC(iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes), padding: .noPadding)
     let ciphertext = try! aes.encrypt(message)
     return BigUInt(Data(bytes: ciphertext))
   }
@@ -175,7 +175,7 @@ public class RingSig {
   ///   - key: The (symmetric) key.
   /// - Returns: Plaintext of AES-256 CBC decrypted ciphertext.
   internal static func decrypt(cipher: Array<UInt8>, key: BigUInt) -> BigUInt {
-    let aes = try! AES(key: key.serialize().bytes, iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes, blockMode: .CBC, padding: NoPadding())
+    let aes = try! AES(key: key.serialize().bytes, blockMode: .CBC(iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes), padding: .noPadding)
     let plaintext = try! aes.decrypt(cipher)
     return BigUInt(Data(bytes: plaintext))
   }
@@ -192,7 +192,7 @@ public class RingSig {
     var result = glue
     for argument in arguments {
       let plaintext = argument ^ result
-      result = encrypt(message: plaintext.bytesWithPadding(to: commonModulus.width / 8), key: key)
+      result = encrypt(message: plaintext.bytesWithPadding(to: commonModulus.bitWidth / 8), key: key)
     }
     return result
   }
@@ -210,7 +210,7 @@ public class RingSig {
     var remainingArguments = arguments
     var temp = glue
     while remainingArguments.last != nil {
-      temp = decrypt(cipher: temp.bytesWithPadding(to: commonModulus.width / 8), key: key)
+      temp = decrypt(cipher: temp.bytesWithPadding(to: commonModulus.bitWidth / 8), key: key)
       if let nextArgument = remainingArguments.removeLast() {
         // y_i of a non-signer
         temp ^= nextArgument

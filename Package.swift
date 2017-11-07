@@ -1,11 +1,24 @@
-// swift-tools-version:3.1
+// swift-tools-version:4.0
 
 import PackageDescription
 
 let package = Package(
     name: "RingSig",
+    products: [
+      .library(
+        name: "RingSig",
+        targets: ["RingSig"]),
+  ],
     dependencies: [
-      .Package(url: "https://github.com/lorentey/BigInt.git", majorVersion: 2, minor: 1),
-      .Package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", majorVersion: 0)
+      .package(url: "https://github.com/lorentey/BigInt.git", .branch("master")),
+      .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", .branch("master"))
+  ],
+    targets: [
+      .target(
+        name: "RingSig",
+        dependencies: ["BigInt", "CryptoSwift"]),
+      .testTarget(
+        name: "RingSigTests",
+        dependencies: ["RingSig"]),
   ]
 )
