@@ -163,7 +163,7 @@ public class RingSig {
   /// - Returns: Ciphertext of AES-256 CBC encrypted message.
   internal static func encrypt(message: Array<UInt8>, key: BigUInt) -> BigUInt {
     precondition(message.count % 16 == 0)
-    let aes = try! AES(key: key.serialize().bytes, blockMode: BlockMode.CBC(iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes), padding: .noPadding)
+    let aes = try! AES(key: key.serialize().bytes, blockMode: CBC(iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes), padding: .noPadding)
     let ciphertext = try! aes.encrypt(message)
     return BigUInt(Data(bytes: ciphertext))
   }
@@ -175,7 +175,7 @@ public class RingSig {
   ///   - key: The (symmetric) key.
   /// - Returns: Plaintext of AES-256 CBC decrypted ciphertext.
   internal static func decrypt(cipher: Array<UInt8>, key: BigUInt) -> BigUInt {
-    let aes = try! AES(key: key.serialize().bytes, blockMode: .CBC(iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes), padding: .noPadding)
+    let aes = try! AES(key: key.serialize().bytes, blockMode: CBC(iv: ">RingSiggiSgniR<".data(using: .utf8)!.bytes), padding: .noPadding)
     let plaintext = try! aes.decrypt(cipher)
     return BigUInt(Data(bytes: plaintext))
   }
