@@ -24,10 +24,7 @@ extension BigUInt {
   public func bytesWithPadding(to bytesCount: Int) -> Array<UInt8> {
     let bytes = self.serialize().bytes
     let paddingBytes = bytesCount - bytes.count
-    var padding = Array<UInt8>()
-    for _ in 0..<paddingBytes {
-      padding += [0]
-    }
+    let padding = Array<UInt8>(repeating: 0, count: paddingBytes)
     return padding + bytes
   }
 
