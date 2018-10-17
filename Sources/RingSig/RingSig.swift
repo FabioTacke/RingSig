@@ -80,9 +80,8 @@ public class RingSig {
     precondition(signature.publicKeys.count == signature.xValues.count)
     // 1. Apply the trap-door permutations
     let commonModulus = commonB(publicKeys: signature.publicKeys)
-    var yValues: [BigUInt] = []
-    for index in 0..<signature.publicKeys.count {
-      yValues.append(g(x: signature.xValues[index], publicKey: signature.publicKeys[index], commonModulus: commonModulus))
+    let yValues: [BigUInt] = zip(signature.xValues, signature.publicKeys).map { (x, publicKey) in
+        return g(x: x, publicKey: publicKey, commonModulus: commonModulus)
     }
     // 2. Compute the key as k = h(m)
     let k = calculateDigest(message: message)
